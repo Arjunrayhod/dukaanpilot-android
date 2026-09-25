@@ -11,6 +11,8 @@ jobs:
   build:
     name: Build & Package Android APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Code
@@ -22,8 +24,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -56,6 +59,8 @@ jobs:
             
             - **100% Offline Kirana POS & Billing OS**
             - **Live Dynamic UPI QR & Smart Soundbox Voice Alert**
+            - **Direct WhatsApp Chat Integration**
+            - **Native Bell Notification & Haptic Vibration**
             - **Camera Barcode Scanner & WhatsApp Bill Receipts**
             - **Khata Udhar Ledger & Customer Management**
             
