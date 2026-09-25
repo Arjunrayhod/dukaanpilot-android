@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -263,8 +264,17 @@ class MainActivity : AppCompatActivity() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
+        val largeIcon = try {
+            BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+        } catch (_: Exception) {
+            null
+        }
+
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .apply {
+                if (largeIcon != null) setLargeIcon(largeIcon)
+            }
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
