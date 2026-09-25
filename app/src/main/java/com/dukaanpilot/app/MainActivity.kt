@@ -117,8 +117,8 @@ class MainActivity : AppCompatActivity() {
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         settings.databaseEnabled = true
-        settings.allowFileAccess = true
-        settings.allowContentAccess = true
+        settings.allowFileAccess = false
+        settings.allowContentAccess = false
         settings.useWideViewPort = true
         settings.loadWithOverviewMode = true
         settings.setSupportZoom(false)
@@ -140,6 +140,18 @@ class MainActivity : AppCompatActivity() {
             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                 android.util.Log.d("DukaanPilotWeb", "${consoleMessage?.message()} -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
                 return true
+            }
+
+            // Secure origin-checked media permission grant for camera barcode scanner & mic
+            override fun onPermissionRequest(request: PermissionRequest?) {
+                request?.let {
+                    val origin = it.origin?.toString() ?: ""
+                    if (origin.startsWith("https://appassets.androidplatform.net")) {
+                        runOnUiThread { it.grant(it.resources) }
+                    } else {
+                        runOnUiThread { it.deny() }
+                    }
+                }
             }
         }
 
@@ -238,19 +250,24 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
+                // 4. Any external web URL opens in external system browser (Protects Native JS Bridge)
+                if (!url.startsWith("https://appassets.androidplatform.net")) {
+                    try {
+                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        startActivity(browserIntent)
+                        return true
+                    } catch (_: Exception) {
+                        return true
+                    }
+                }
+
                 return false
             }
         }
 
-        webView.webChromeClient = object : WebChromeClient() {
-            // Automatically grant web camera & microphone permissions inside the app
-            override fun onPermissionRequest(request: PermissionRequest?) {
-                request?.let {
-                    runOnUiThread {
-                        it.grant(it.resources)
-                    }
-                }
-            }
+        // Prevent accidental swipe-to-refresh while scrolling down the POS catalog
+        webView.viewTreeObserver.addOnScrollChangedListener {
+            swipeRefresh.isEnabled = (webView.scrollY == 0)
         }
     }
 
