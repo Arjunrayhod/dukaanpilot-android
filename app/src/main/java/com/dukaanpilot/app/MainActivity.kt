@@ -38,7 +38,8 @@ class MainActivity : AppCompatActivity() {
     // Google Android WebViewAssetLoader loads local bundled assets without CORS issues
     private val assetLoader by lazy {
         WebViewAssetLoader.Builder()
-            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .setDomain("appassets.androidplatform.net")
+            .addPathHandler("/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
     }
 
@@ -64,7 +65,7 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) {
             // Load local bundled web application (100% Offline Capable)
-            webView.loadUrl("https://appassets.androidplatform.net/assets/web/index.html")
+            webView.loadUrl("https://appassets.androidplatform.net/index.html")
         } else {
             webView.restoreState(savedInstanceState)
         }
@@ -133,16 +134,68 @@ class MainActivity : AppCompatActivity() {
         // Register Native JavaScript Bridge
         webView.addJavascriptInterface(DukaanPilotNativeBridge(), "DukaanPilotNative")
 
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                android.util.Log.d("DukaanPilotWeb", "${consoleMessage?.message()} -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
+                return true
+            }
+        }
+
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
                 view: WebView?,
                 request: WebResourceRequest?
             ): WebResourceResponse? {
-                request?.url?.let {
-                    val response = assetLoader.shouldInterceptRequest(it)
-                    if (response != null) return response
+                request?.url?.let { uri ->
+                    if (uri.host == "appassets.androidplatform.net") {
+                        val path = uri.path ?: "/"
+                        if (path == "/" || path.isEmpty()) {
+                            val indexUri = Uri.parse("https://appassets.androidplatform.net/index.html")
+                            val res = assetLoader.shouldInterceptRequest(indexUri)
+                            if (res != null) return res
+                        }
+                        val response = assetLoader.shouldInterceptRequest(uri)
+                        if (response != null) return response
+
+                        // Robust direct asset fallback from assets/ folder
+                        val cleanPath = (uri.path ?: "").trimStart('/')
+                        val assetPath = if (cleanPath.isEmpty()) "index.html" else cleanPath
+                        try {
+                            val stream = assets.open(assetPath)
+                            val mimeType = when {
+                                assetPath.endsWith(".html") -> "text/html"
+                                assetPath.endsWith(".js") -> "application/javascript"
+                                assetPath.endsWith(".css") -> "text/css"
+                                assetPath.endsWith(".json") -> "application/json"
+                                assetPath.endsWith(".png") -> "image/png"
+                                assetPath.endsWith(".svg") -> "image/svg+xml"
+                                assetPath.endsWith(".webp") -> "image/webp"
+                                assetPath.endsWith(".ico") -> "image/x-icon"
+                                else -> "application/octet-stream"
+                            }
+                            return WebResourceResponse(mimeType, "UTF-8", stream)
+                        } catch (_: Exception) {
+                            // Single Page App route fallback (e.g. /pos, /khata)
+                            if (!assetPath.substringAfterLast("/").contains(".")) {
+                                try {
+                                    return WebResourceResponse("text/html", "UTF-8", assets.open("index.html"))
+                                } catch (_: Exception) {}
+                            }
+                        }
+                    }
                 }
                 return super.shouldInterceptRequest(view, request)
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                errorCode: Int,
+                description: String?,
+                failingUrl: String?
+            ) {
+                android.util.Log.e("DukaanPilotWeb", "Error $errorCode: $description on $failingUrl")
             }
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {

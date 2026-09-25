@@ -1,0 +1,43 @@
+{
+  "name": "DukaanPilot - AI Smart Kirana POS & Billing",
+  "short_name": "DukaanPilot",
+  "description": "Next-Gen AI Voice POS, 100% Offline Kirana Billing & Smart UPI Soundbox OS",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "categories": ["business", "finance", "productivity", "shopping"],
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick POS Billing",
+      "short_name": "POS",
+      "description": "Start quick barcode & voice billing",
+      "url": "/?tab=pos",
+      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Khata Udhar Ledger",
+      "short_name": "Khata",
+      "description": "Manage customer credit & ledger",
+      "url": "/?tab=khata",
+      "icons": [{ "src": "/icon-192.svg", "sizes": "192x192" }]
+    }
+  ]
+}
