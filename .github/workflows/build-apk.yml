@@ -1,0 +1,66 @@
+name: Build DukaanPilot Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build & Package Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Android APK with Gradle
+        run: gradle assembleDebug --stacktrace
+
+      - name: Locate Generated APK
+        id: apk-path
+        run: |
+          APK=$(find app/build/outputs/apk/ -name "*.apk" | head -n 1)
+          echo "Found APK at: $APK"
+          echo "apk_file=$APK" >> $GITHUB_OUTPUT
+
+      - name: Upload APK as Artifact (1-Click Download)
+        uses: actions/upload-artifact@v4
+        with:
+          name: DukaanPilot-Android-POS-App
+          path: ${{ steps.apk-path.outputs.apk_file }}
+          retention-days: 30
+
+      - name: Publish GitHub Release with APK
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: DukaanPilot POS Mobile App v1.0.${{ github.run_number }}
+          body: |
+            ## 📱 DukaanPilot Retail POS Android App
+            
+            - **100% Offline Kirana POS & Billing OS**
+            - **Live Dynamic UPI QR & Smart Soundbox Voice Alert**
+            - **Camera Barcode Scanner & WhatsApp Bill Receipts**
+            - **Khata Udhar Ledger & Customer Management**
+            
+            ### 📥 Download & Install:
+            Download **`app-debug.apk`** below directly onto your Android phone/tablet to install!
+          files: ${{ steps.apk-path.outputs.apk_file }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
