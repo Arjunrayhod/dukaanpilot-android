@@ -119,8 +119,8 @@ class MainActivity : AppCompatActivity() {
         settings.databaseEnabled = true
         settings.allowFileAccess = false
         settings.allowContentAccess = false
-        settings.useWideViewPort = true
-        settings.loadWithOverviewMode = true
+        settings.useWideViewPort = false
+        settings.loadWithOverviewMode = false
         settings.setSupportZoom(false)
         settings.builtInZoomControls = false
         settings.displayZoomControls = false
@@ -397,6 +397,12 @@ class MainActivity : AppCompatActivity() {
                 style.innerHTML = `
                     * {
                         -webkit-tap-highlight-color: transparent !important;
+                        box-sizing: border-box !important;
+                    }
+                    html, body, #root {
+                        width: 100% !important;
+                        max-width: 100vw !important;
+                        overflow-x: hidden !important;
                     }
                     body {
                         user-select: none !important;
